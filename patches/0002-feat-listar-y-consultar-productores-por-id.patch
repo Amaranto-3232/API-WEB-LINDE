@@ -1,0 +1,101 @@
+From b75030fd259d4cf632f18469641f454ac210cdd7 Mon Sep 17 00:00:00 2001
+From: Josep Gonzalo Rodriguez Vargas <josep@pendiente.local>
+Date: Thu, 19 Nov 2026 17:34:16 -0400
+Subject: [PATCH 2/5] feat: listar y consultar productores por id
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Wh8GBPHBg3EkcqpmF3cM6T
+---
+ Controllers/ProductoresController.cs | 80 ++++++++++++++++++++++++++++
+ 1 file changed, 80 insertions(+)
+ create mode 100644 Controllers/ProductoresController.cs
+
+diff --git a/Controllers/ProductoresController.cs b/Controllers/ProductoresController.cs
+new file mode 100644
+index 0000000..51c6278
+--- /dev/null
++++ b/Controllers/ProductoresController.cs
+@@ -0,0 +1,80 @@
++using LINDE.Registro.Api.Data;
++using LINDE.Registro.Api.DTOs.Productores;
++using Microsoft.AspNetCore.Mvc;
++using Microsoft.EntityFrameworkCore;
++
++namespace LINDE.Registro.Api.Controllers;
++
++/// <summary>
++/// Gestión de productores (CU-02).
++/// </summary>
++[ApiController]
++[Route("api/productores")]
++[Produces("application/json")]
++public class ProductoresController(LindeDbContext db) : ControllerBase
++{
++    /// <summary>
++    /// Lista todos los productores ordenados por apellido y nombre.
++    /// </summary>
++    [HttpGet]
++    [ProducesResponseType(typeof(List<ProductorRespuestaDto>), StatusCodes.Status200OK)]
++    public async Task<ActionResult<List<ProductorRespuestaDto>>> Listar(CancellationToken ct)
++    {
++        var productores = await db.Productores
++            .AsNoTracking()
++            .OrderBy(p => p.Apellido)
++            .ThenBy(p => p.Nombre)
++            .Select(p => new ProductorRespuestaDto
++            {
++                Id = p.Id,
++                Nombre = p.Nombre,
++                Apellido = p.Apellido,
++                Ci = p.Ci,
++                Telefono = p.Telefono,
++                FechaRegistro = p.FechaRegistro,
++                CantidadPredios = p.Predios.Count
++            })
++            .ToListAsync(ct);
++
++        return Ok(productores);
++    }
++
++    /// <summary>
++    /// Obtiene un productor por su id.
++    /// </summary>
++    /// <param name="id">Id del productor.</param>
++    /// <param name="ct">Token de cancelación.</param>
++    [HttpGet("{id:int}")]
++    [ProducesResponseType(typeof(ProductorRespuestaDto), StatusCodes.Status200OK)]
++    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
++    public async Task<ActionResult<ProductorRespuestaDto>> ObtenerPorId(int id, CancellationToken ct)
++    {
++        var productor = await db.Productores
++            .AsNoTracking()
++            .Where(p => p.Id == id)
++            .Select(p => new ProductorRespuestaDto
++            {
++                Id = p.Id,
++                Nombre = p.Nombre,
++                Apellido = p.Apellido,
++                Ci = p.Ci,
++                Telefono = p.Telefono,
++                FechaRegistro = p.FechaRegistro,
++                CantidadPredios = p.Predios.Count
++            })
++            .FirstOrDefaultAsync(ct);
++
++        if (productor is null)
++            return NoEncontrado(id);
++
++        return Ok(productor);
++    }
++
++    private NotFoundObjectResult NoEncontrado(int id) =>
++        NotFound(new ProblemDetails
++        {
++            Title = "Productor no encontrado",
++            Detail = $"No existe un productor con id {id}.",
++            Status = StatusCodes.Status404NotFound
++        });
++}
+-- 
+2.43.0
+

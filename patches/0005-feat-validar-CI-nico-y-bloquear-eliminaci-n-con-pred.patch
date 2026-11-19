@@ -1,0 +1,93 @@
+From 6feced7f7417098e2f2d911b6e92c7c11675b799 Mon Sep 17 00:00:00 2001
+From: Josep Gonzalo Rodriguez Vargas <josep@pendiente.local>
+Date: Thu, 19 Nov 2026 17:35:05 -0400
+Subject: [PATCH 5/5] =?UTF-8?q?feat:=20validar=20CI=20=C3=BAnico=20y=20blo?=
+ =?UTF-8?q?quear=20eliminaci=C3=B3n=20con=20predios?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Wh8GBPHBg3EkcqpmF3cM6T
+---
+ Controllers/ProductoresController.cs | 32 +++++++++++++++++++++++++---
+ 1 file changed, 29 insertions(+), 3 deletions(-)
+
+diff --git a/Controllers/ProductoresController.cs b/Controllers/ProductoresController.cs
+index 1a13d5d..8b4327a 100644
+--- a/Controllers/ProductoresController.cs
++++ b/Controllers/ProductoresController.cs
+@@ -83,11 +83,18 @@ public class ProductoresController(LindeDbContext db) : ControllerBase
+     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+     public async Task<ActionResult<ProductorRespuestaDto>> Crear(ProductorCrearDto dto, CancellationToken ct)
+     {
++        var ci = dto.Ci!.Trim();
++        if (await db.Productores.AnyAsync(p => p.Ci == ci, ct))
++        {
++            ModelState.AddModelError(nameof(dto.Ci), "Ya existe un productor con ese CI.");
++            return ValidationProblem(ModelState);
++        }
++
+         var productor = new Productor
+         {
+             Nombre = dto.Nombre!.Trim(),
+             Apellido = dto.Apellido!.Trim(),
+-            Ci = dto.Ci!.Trim(),
++            Ci = ci,
+             Telefono = string.IsNullOrWhiteSpace(dto.Telefono) ? null : dto.Telefono.Trim(),
+             FechaRegistro = DateTime.UtcNow
+         };
+@@ -125,9 +132,17 @@ public class ProductoresController(LindeDbContext db) : ControllerBase
+         if (productor is null)
+             return NoEncontrado(id);
+ 
++        var ci = dto.Ci!.Trim();
++        // El CI puede repetirse solo si es el del mismo productor.
++        if (await db.Productores.AnyAsync(p => p.Ci == ci && p.Id != id, ct))
++        {
++            ModelState.AddModelError(nameof(dto.Ci), "Ya existe un productor con ese CI.");
++            return ValidationProblem(ModelState);
++        }
++
+         productor.Nombre = dto.Nombre!.Trim();
+         productor.Apellido = dto.Apellido!.Trim();
+-        productor.Ci = dto.Ci!.Trim();
++        productor.Ci = ci;
+         productor.Telefono = string.IsNullOrWhiteSpace(dto.Telefono) ? null : dto.Telefono.Trim();
+ 
+         await db.SaveChangesAsync(ct);
+@@ -135,19 +150,30 @@ public class ProductoresController(LindeDbContext db) : ControllerBase
+     }
+ 
+     /// <summary>
+-    /// Elimina un productor.
++    /// Elimina un productor que no tenga predios.
+     /// </summary>
+     /// <param name="id">Id del productor.</param>
+     /// <param name="ct">Token de cancelación.</param>
+     [HttpDelete("{id:int}")]
+     [ProducesResponseType(StatusCodes.Status204NoContent)]
+     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
++    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+     public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
+     {
+         var productor = await db.Productores.FindAsync([id], ct);
+         if (productor is null)
+             return NoEncontrado(id);
+ 
++        if (await db.Predios.AnyAsync(p => p.ProductorId == id, ct))
++        {
++            return Conflict(new ProblemDetails
++            {
++                Title = "No se puede eliminar el productor",
++                Detail = $"El productor con id {id} tiene predios registrados.",
++                Status = StatusCodes.Status409Conflict
++            });
++        }
++
+         db.Productores.Remove(productor);
+         await db.SaveChangesAsync(ct);
+         return NoContent();
+-- 
+2.43.0
+

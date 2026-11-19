@@ -1,0 +1,124 @@
+From 2334eed109f6db88c9d7ebebe87ef9beca6601a1 Mon Sep 17 00:00:00 2001
+From: Josep Gonzalo Rodriguez Vargas <josep@pendiente.local>
+Date: Thu, 19 Nov 2026 17:34:03 -0400
+Subject: [PATCH 1/5] feat: agregar DTO de entrada y salida de productores
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Wh8GBPHBg3EkcqpmF3cM6T
+---
+ DTOs/Productores/ProductorActualizarDto.cs | 32 ++++++++++++++++++++++
+ DTOs/Productores/ProductorCrearDto.cs      | 32 ++++++++++++++++++++++
+ DTOs/Productores/ProductorRespuestaDto.cs  | 23 ++++++++++++++++
+ 3 files changed, 87 insertions(+)
+ create mode 100644 DTOs/Productores/ProductorActualizarDto.cs
+ create mode 100644 DTOs/Productores/ProductorCrearDto.cs
+ create mode 100644 DTOs/Productores/ProductorRespuestaDto.cs
+
+diff --git a/DTOs/Productores/ProductorActualizarDto.cs b/DTOs/Productores/ProductorActualizarDto.cs
+new file mode 100644
+index 0000000..bc088c4
+--- /dev/null
++++ b/DTOs/Productores/ProductorActualizarDto.cs
+@@ -0,0 +1,32 @@
++using System.ComponentModel.DataAnnotations;
++
++namespace LINDE.Registro.Api.DTOs.Productores;
++
++/// <summary>
++/// Datos para actualizar un productor existente.
++/// </summary>
++public class ProductorActualizarDto
++{
++    /// <summary>Nombre del productor.</summary>
++    /// <example>Ana María</example>
++    [Required(ErrorMessage = "El nombre es obligatorio.")]
++    [StringLength(100, MinimumLength = 2, ErrorMessage = "El nombre debe tener entre 2 y 100 caracteres.")]
++    public string? Nombre { get; set; }
++
++    /// <summary>Apellido del productor.</summary>
++    /// <example>Mendoza</example>
++    [Required(ErrorMessage = "El apellido es obligatorio.")]
++    [StringLength(100, MinimumLength = 2, ErrorMessage = "El apellido debe tener entre 2 y 100 caracteres.")]
++    public string? Apellido { get; set; }
++
++    /// <summary>Cédula de identidad, solo dígitos.</summary>
++    /// <example>4567891</example>
++    [Required(ErrorMessage = "El CI es obligatorio.")]
++    [RegularExpression(@"^\d{5,10}$", ErrorMessage = "El CI debe tener entre 5 y 10 dígitos.")]
++    public string? Ci { get; set; }
++
++    /// <summary>Teléfono de contacto (opcional).</summary>
++    /// <example>70011223</example>
++    [StringLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
++    public string? Telefono { get; set; }
++}
+diff --git a/DTOs/Productores/ProductorCrearDto.cs b/DTOs/Productores/ProductorCrearDto.cs
+new file mode 100644
+index 0000000..4e905e4
+--- /dev/null
++++ b/DTOs/Productores/ProductorCrearDto.cs
+@@ -0,0 +1,32 @@
++using System.ComponentModel.DataAnnotations;
++
++namespace LINDE.Registro.Api.DTOs.Productores;
++
++/// <summary>
++/// Datos para registrar un productor.
++/// </summary>
++public class ProductorCrearDto
++{
++    /// <summary>Nombre del productor.</summary>
++    /// <example>Carlos</example>
++    [Required(ErrorMessage = "El nombre es obligatorio.")]
++    [StringLength(100, MinimumLength = 2, ErrorMessage = "El nombre debe tener entre 2 y 100 caracteres.")]
++    public string? Nombre { get; set; }
++
++    /// <summary>Apellido del productor.</summary>
++    /// <example>Rojas</example>
++    [Required(ErrorMessage = "El apellido es obligatorio.")]
++    [StringLength(100, MinimumLength = 2, ErrorMessage = "El apellido debe tener entre 2 y 100 caracteres.")]
++    public string? Apellido { get; set; }
++
++    /// <summary>Cédula de identidad, solo dígitos.</summary>
++    /// <example>7891234</example>
++    [Required(ErrorMessage = "El CI es obligatorio.")]
++    [RegularExpression(@"^\d{5,10}$", ErrorMessage = "El CI debe tener entre 5 y 10 dígitos.")]
++    public string? Ci { get; set; }
++
++    /// <summary>Teléfono de contacto (opcional).</summary>
++    /// <example>70033445</example>
++    [StringLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
++    public string? Telefono { get; set; }
++}
+diff --git a/DTOs/Productores/ProductorRespuestaDto.cs b/DTOs/Productores/ProductorRespuestaDto.cs
+new file mode 100644
+index 0000000..40e9d73
+--- /dev/null
++++ b/DTOs/Productores/ProductorRespuestaDto.cs
+@@ -0,0 +1,23 @@
++namespace LINDE.Registro.Api.DTOs.Productores;
++
++/// <summary>
++/// Productor tal como lo devuelve la API.
++/// </summary>
++public class ProductorRespuestaDto
++{
++    public int Id { get; set; }
++
++    public string Nombre { get; set; } = string.Empty;
++
++    public string Apellido { get; set; } = string.Empty;
++
++    public string Ci { get; set; } = string.Empty;
++
++    public string? Telefono { get; set; }
++
++    /// <summary>Fecha de registro en UTC.</summary>
++    public DateTime FechaRegistro { get; set; }
++
++    /// <summary>Cantidad de predios registrados a su nombre.</summary>
++    public int CantidadPredios { get; set; }
++}
+-- 
+2.43.0
+

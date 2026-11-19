@@ -1,0 +1,69 @@
+From 34410d67d95183a757c6bbc8cf89e8984677f766 Mon Sep 17 00:00:00 2001
+From: Josep Gonzalo Rodriguez Vargas <josep@pendiente.local>
+Date: Thu, 19 Nov 2026 17:34:45 -0400
+Subject: [PATCH 4/5] feat: actualizar y eliminar productores
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Wh8GBPHBg3EkcqpmF3cM6T
+---
+ Controllers/ProductoresController.cs | 44 ++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+
+diff --git a/Controllers/ProductoresController.cs b/Controllers/ProductoresController.cs
+index 25d7094..1a13d5d 100644
+--- a/Controllers/ProductoresController.cs
++++ b/Controllers/ProductoresController.cs
+@@ -109,6 +109,50 @@ public class ProductoresController(LindeDbContext db) : ControllerBase
+         return CreatedAtAction(nameof(ObtenerPorId), new { id = productor.Id }, respuesta);
+     }
+ 
++    /// <summary>
++    /// Actualiza los datos de un productor.
++    /// </summary>
++    /// <param name="id">Id del productor.</param>
++    /// <param name="dto">Datos nuevos.</param>
++    /// <param name="ct">Token de cancelación.</param>
++    [HttpPut("{id:int}")]
++    [ProducesResponseType(StatusCodes.Status204NoContent)]
++    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
++    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
++    public async Task<IActionResult> Actualizar(int id, ProductorActualizarDto dto, CancellationToken ct)
++    {
++        var productor = await db.Productores.FindAsync([id], ct);
++        if (productor is null)
++            return NoEncontrado(id);
++
++        productor.Nombre = dto.Nombre!.Trim();
++        productor.Apellido = dto.Apellido!.Trim();
++        productor.Ci = dto.Ci!.Trim();
++        productor.Telefono = string.IsNullOrWhiteSpace(dto.Telefono) ? null : dto.Telefono.Trim();
++
++        await db.SaveChangesAsync(ct);
++        return NoContent();
++    }
++
++    /// <summary>
++    /// Elimina un productor.
++    /// </summary>
++    /// <param name="id">Id del productor.</param>
++    /// <param name="ct">Token de cancelación.</param>
++    [HttpDelete("{id:int}")]
++    [ProducesResponseType(StatusCodes.Status204NoContent)]
++    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
++    public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
++    {
++        var productor = await db.Productores.FindAsync([id], ct);
++        if (productor is null)
++            return NoEncontrado(id);
++
++        db.Productores.Remove(productor);
++        await db.SaveChangesAsync(ct);
++        return NoContent();
++    }
++
+     private NotFoundObjectResult NoEncontrado(int id) =>
+         NotFound(new ProblemDetails
+         {
+-- 
+2.43.0
+
